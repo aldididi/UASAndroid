@@ -1,23 +1,30 @@
 package com.uas.todolist.Adapter;
 
+import android.content.Context;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.uas.todolist.AddNewTasks;
 import com.uas.todolist.MainActivity;
 import com.uas.todolist.Model.ToDoModel;
 import com.uas.todolist.R;
+import com.uas.todolist.Utils.DatabaseHandler;
 
 import java.util.List;
 
 public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
     private List<ToDoModel> todoList;
     private MainActivity activity;
+   private DatabaseHandler db;
+    public ToDoAdapter(DatabaseHandler db,MainActivity activity){
 
-    public ToDoAdapter(MainActivity activity){
+        this.db = db;
         this.activity = activity;
     }
 
@@ -28,9 +35,20 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
     }
 
     public void onBindViewHolder(ViewHolder holder, int position){
+        db.openDatabase();
         ToDoModel item = todoList.get(position);
         holder.task.setText(item.getTask());
         holder.task.setChecked(toBoolean( item.getStatus()) );
+        holder.task.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    db.updateStatus(item.getId(),1);
+                } else {
+                    db.updateStatus(item.getId(),0);
+                }
+            }
+        });
     }
 
     public int getItemCount(){
@@ -44,6 +62,22 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
     public void setTasks(List<ToDoModel> todoList){
         this.todoList = todoList;
         notifyDataSetChanged();
+    }
+
+    public Context getContext(){
+        return activity;
+    }
+
+
+    public void editItem(int position){
+        ToDoModel item = todoList.get(position);
+        Bundle bundle = new Bundle();
+        bundle.putInt("id", item.getId());;
+        bundle.putString("task", item.getTask());
+        AddNewTasks fragment = new AddNewTasks();
+        fragment.setArguments(bundle);
+        fragment.show(activity.getSupportFragmentManager(), AddNewTasks.TAG);
+
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder{
